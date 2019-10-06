@@ -23,15 +23,27 @@ public class MixingSendHandler implements AudioSendHandler,Loggable {
   private byte[] lastData;
   private Queue<AudioTrack> tq = new ConcurrentLinkedQueue<>();
   private Runnable onTrackEnd;
+  
   public MixingSendHandler(AudioPlayerManager manager, Runnable onTrackEnd) {
+	  this.createAudioPlayers(manager);
+	  this.onTrackEnd = onTrackEnd;
+  }
+  
+  public void createAudioPlayers(AudioPlayerManager manager) {
 	  for(int i = 0; i < 4; i++) {
 		  AudioPlayer player = manager.createPlayer();
 		  player.addListener(new TrackHandler());
 		  sounds.add(player);
 	  }
-	  this.onTrackEnd = onTrackEnd;
   }
   
+  public void clearAudioPlayers() {
+	  tq.clear();
+	  sounds.forEach(action -> {
+		  action.destroy();
+	  });
+	  sounds.clear();
+  }
   
   public void queue(AudioTrack track) {
 	  Optional<AudioPlayer> player = sounds.stream().filter(ap -> ap.getPlayingTrack() == null).findAny();

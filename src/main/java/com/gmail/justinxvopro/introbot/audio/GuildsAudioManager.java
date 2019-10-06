@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,45 +38,56 @@ public class GuildsAudioManager implements Loggable {
 			audioManagers.put(guild, new GuildAudioManager(audioManager, guild));
 		});
 	}
+	
+	public static void reset(Guild guild) {
+		Optional.of(audioManagers.get(guild)).ifPresent(GuildAudioManager::reset);
+	}
 
 	public static void queueTrack(Guild guild, VoiceChannel channel, File file) {
+		queueTrack(guild, channel, file.toPath().toString());
+	}
+	
+	public static void queueTrack(Guild guild, VoiceChannel voice, String identifier, Consumer<Optional<AudioTrack>> onLoad) {
 		if (!audioManagers.containsKey(guild)) {
 			audioManagers.put(guild, new GuildAudioManager(audioManager, guild));
 			LOGGER.info("Created!");
 		}
-
-//		if (guild.getSelfMember().getVoiceState().inVoiceChannel()) {
-//			if (!audioManagers.get(guild).getSendHandler().isPlaying()) {
-//				guild.getAudioManager().openAudioConnection(channel);
-//			}
-//		} else {
-//			guild.getAudioManager().openAudioConnection(channel);
-//		}
 		
-		guild.getAudioManager().openAudioConnection(channel);
+		guild.getAudioManager().openAudioConnection(voice);
 
-		audioManager.loadItem(file.toPath().toString(), new AudioLoadResultHandler() {
+		audioManager.loadItem(identifier, new AudioLoadResultHandler() {
 
 			@Override
 			public void trackLoaded(AudioTrack track) {
 				LOGGER.info("Loaded Audio Track {}", track.getInfo().title);
 				audioManagers.get(guild).queueTrack(track);
+				onLoad.accept(Optional.of(track));
 			}
 
 			@Override
 			public void playlistLoaded(AudioPlaylist playlist) {
+				LOGGER.info("Playlist Success");
+				AudioTrack track = playlist.getTracks().get(0);
+				audioManagers.get(guild).queueTrack(track);
+				onLoad.accept(Optional.of(track));
 			}
 
 			@Override
 			public void noMatches() {
 				LOGGER.info("No matches!");
+				onLoad.accept(Optional.empty());
 			}
 
 			@Override
 			public void loadFailed(FriendlyException exception) {
 				LOGGER.error("Fail load {}", exception.getMessage());
+				onLoad.accept(Optional.empty());
 			}
 
 		});
+	}
+	
+	public static void queueTrack(Guild guild, VoiceChannel voice, String identifier) {
+		queueTrack(guild, voice, identifier, (track)->{});
 	}
 }

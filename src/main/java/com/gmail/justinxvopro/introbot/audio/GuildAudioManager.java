@@ -10,13 +10,20 @@ public class GuildAudioManager {
 	@Getter
 	private MixingSendHandler sendHandler;
 	private Guild guild;
+	private AudioPlayerManager manager;
 	
 	public GuildAudioManager(AudioPlayerManager manager, Guild g) {
+		this.manager = manager;
 		sendHandler = new MixingSendHandler(manager, () -> {
 			g.getAudioManager().closeAudioConnection();
 		});
 		this.guild = g;
 		this.guild.getAudioManager().setSendingHandler(sendHandler);
+	}
+	
+	public void reset() {
+		sendHandler.clearAudioPlayers();
+		sendHandler.createAudioPlayers(manager);
 	}
 	
 	public void queueTrack(AudioTrack track) {
