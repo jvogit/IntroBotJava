@@ -49,6 +49,14 @@ public class BotCore extends ListenerAdapter {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void reloadConfig() {
+		try {
+			CONFIG = generateConfigFile();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+	}
 
 	private static Optional<String> findTokenFromArguments(String args[]) {
 		if (args.length >= 2) {

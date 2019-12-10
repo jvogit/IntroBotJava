@@ -53,6 +53,12 @@ public class SimpleCommandListener extends ListenerAdapter {
 			case "help":
 				event.getTextChannel().sendMessage(".globalenable .globaldisable").queue();
 				break;
+			case "reload":
+				event.getTextChannel().sendMessage("Reloading. . .").queue(msg -> {
+					BotCore.reloadConfig();
+					msg.editMessage("Reloaded!").queue();
+				});
+				break;
 			}
 		}
 		switch (event.getMessage().getContentRaw().split("\\s+")[0].substring(1)) {
